@@ -1,0 +1,216 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}</style><style>:root{color-scheme:light dark;--md-bg:#fff;--md-text:rgba(0,0,0,.8);--md-muted:rgba(0,0,0,.6);--md-fill:rgba(0,0,0,.04);--md-fill-strong:rgba(0,0,0,.06);--md-rule:rgba(0,0,0,.1);--md-rule-strong:rgba(0,0,0,.16);--md-link:hsl(210 100% 45%)}@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){--md-bg:#0d0d0d;--md-text:rgba(255,255,255,.85);--md-muted:rgba(255,255,255,.6);--md-fill:rgba(255,255,255,.06);--md-fill-strong:rgba(255,255,255,.09);--md-rule:rgba(255,255,255,.14);--md-rule-strong:rgba(255,255,255,.22);--md-link:hsl(210 100% 72%)}}:root[data-theme="dark"]{color-scheme:dark;--md-bg:#0d0d0d;--md-text:rgba(255,255,255,.85);--md-muted:rgba(255,255,255,.6);--md-fill:rgba(255,255,255,.06);--md-fill-strong:rgba(255,255,255,.09);--md-rule:rgba(255,255,255,.14);--md-rule-strong:rgba(255,255,255,.22);--md-link:hsl(210 100% 72%)}:root[data-theme="light"]{color-scheme:light}@media print{:root,:root[data-theme="dark"]{color-scheme:light;--md-bg:#fff;--md-text:rgba(0,0,0,.8);--md-muted:rgba(0,0,0,.6);--md-fill:rgba(0,0,0,.04);--md-fill-strong:rgba(0,0,0,.06);--md-rule:rgba(0,0,0,.1);--md-rule-strong:rgba(0,0,0,.16);--md-link:hsl(210 100% 45%)}}body{background:var(--md-bg);color:var(--md-text);max-width:720px;margin:0 auto;padding:32px;display:flex;flex-direction:column;gap:10px;font:14px/1.55 -apple-system,BlinkMacSystemFont,'SF Pro','Segoe UI',sans-serif;overflow-wrap:break-word}body>:first-child{margin-top:0}h1,h2,h3,h4,h5,h6{margin:6px 0 0;line-height:1.25;font-weight:600;text-wrap:balance}h1{font-size:1.35em}h2{font-size:1.15em;color:var(--md-muted)}h3,h4,h5,h6{font-size:1em}p,ul,ol,blockquote,table,pre,hr{margin:0}strong{font-weight:600}a{color:var(--md-link);text-decoration:none}a:hover{text-decoration:underline}ul,ol{display:flex;flex-direction:column;gap:6px;padding-left:22px}ul{list-style:disc}ol{list-style:decimal}:is(li,td,th)>*+:is(p,ul,ol,blockquote){margin-top:6px}blockquote{display:flex;flex-direction:column;gap:10px;border-left:2px solid var(--md-rule);padding-left:10px;color:var(--md-muted)}:not(pre)>code{background:var(--md-fill);padding:1px 3px;border-radius:4px;font:.92em 'SF Mono',ui-monospace,Menlo,Consolas,monospace}a>code{background:none;color:inherit}pre{background:var(--md-fill);padding:10px 12px;border-radius:6px;overflow-x:auto;font:12px/1.5 'SF Mono',ui-monospace,Menlo,Consolas,monospace;margin-block:4px}pre code{background:none;padding:0;font:inherit}table{width:100%;border-collapse:separate;border-spacing:2px;font:inherit}th,td{padding:6px 8px;border-radius:3px;text-align:left;vertical-align:top}th{background:var(--md-fill-strong);font-weight:600}td{background:var(--md-fill)}:is(th,td) :not(pre)>code{background:transparent}hr{border:0;border-top:1px solid var(--md-rule-strong);margin-block:10px}img{max-width:100%;height:auto;border-radius:4px}</style>
+</head><body>
+<h1>Planning Note: Tech Stack &amp; Team Split</h1>
+<h2>Agentic MOM Generator — 2-Person Team</h2>
+<p>Companion to the <a href="agentic-mom-generator-hld.md">HLD</a>. This note is working/planning material, not part of the formal design doc.</p>
+<hr>
+<h2>1. Tech Stack (mapped to HLD components)</h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Component(s)</th>
+<th>Tech Choice</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Language/runtime</td>
+<td>All</td>
+<td>Python 3.11+ (core pipeline); TypeScript/React only for the UI layer</td>
+</tr>
+<tr>
+<td>Audio capture</td>
+<td><code>AudioCaptureService</code>, <code>AudioBufferManager</code></td>
+<td><code>sounddevice</code> / <code>PyAudio</code> for mic I/O; ring buffer via <code>collections.deque</code> or <code>numpy</code> circular array</td>
+</tr>
+<tr>
+<td>VAD</td>
+<td><code>VoiceActivityDetector</code></td>
+<td><code>silero-vad</code></td>
+</tr>
+<tr>
+<td>Streaming ASR</td>
+<td><code>StreamingTranscriber</code></td>
+<td><code>faster-whisper</code> (CTranslate2, quantized <code>small</code>/<code>medium</code> model)</td>
+</tr>
+<tr>
+<td>Diarization</td>
+<td><code>SpeakerDiarizer</code>, <code>SpeakerProfileStore</code></td>
+<td><code>pyannote.audio</code> for embeddings/clustering; SQLite + <code>numpy</code>, or <code>chromadb</code> (local mode) for embedding storage</td>
+</tr>
+<tr>
+<td>Agent/orchestration</td>
+<td><code>MeetingOrchestratorAgent</code>, <code>SummaryGeneratorAgent</code>, <code>MOMGeneratorAgent</code></td>
+<td>Plain Python classes/state machine — avoid a heavy agent framework at this scale</td>
+</tr>
+<tr>
+<td>LLM providers</td>
+<td><code>ILLMProvider</code>, <code>LocalLLMClient</code>, <code>LLMRouter</code></td>
+<td>Ollama (Llama 3.1 8B / Mistral 7B) via local REST API</td>
+</tr>
+<tr>
+<td>Cloud fallback</td>
+<td><code>CloudLLMClient</code></td>
+<td>Anthropic or OpenAI API, invoked only through <code>LLMRouter</code></td>
+</tr>
+<tr>
+<td>Redaction</td>
+<td><code>PIIRedactionService</code></td>
+<td><code>presidio</code>, or regex + NER via <code>spaCy</code></td>
+</tr>
+<tr>
+<td>Persistence</td>
+<td><code>MeetingRepository</code></td>
+<td>SQLite via <code>SQLAlchemy</code>; audio/transcripts/MOM as files on disk</td>
+</tr>
+<tr>
+<td>Security</td>
+<td><code>SecurityManager</code></td>
+<td><code>cryptography</code> (Fernet) for at-rest encryption</td>
+</tr>
+<tr>
+<td>Event bus</td>
+<td><code>EventBus</code></td>
+<td><code>asyncio.Queue</code>-based pub/sub, or <code>blinker</code> for named signals</td>
+</tr>
+<tr>
+<td>API/UI</td>
+<td><code>UIController</code></td>
+<td><code>FastAPI</code> (REST + WebSocket) backend; React (Vite) frontend, or minimal local HTML/JS</td>
+</tr>
+<tr>
+<td>Monitoring</td>
+<td><code>MetricsCollector</code>, <code>HealthCheckService</code>, <code>AlertManager</code></td>
+<td><code>structlog</code> for structured logs; <code>prometheus-client</code> for local metrics export</td>
+</tr>
+<tr>
+<td>Evaluation</td>
+<td><code>EvaluationService</code>, <code>FeedbackCollector</code></td>
+<td><code>jiwer</code> for WER; LLM-as-judge rubric scoring for MOM completeness; <code>pytest</code> fixtures fed by collected corrections</td>
+</tr>
+<tr>
+<td>Testing</td>
+<td>All</td>
+<td><code>pytest</code> + <code>unittest.mock</code> (mock <code>ILLMProvider</code> — never hit real LLMs in unit tests)</td>
+</tr>
+<tr>
+<td>Packaging</td>
+<td>Delivery</td>
+<td><code>Tauri</code> or <code>Electron</code> wrapping the FastAPI backend for a desktop app; otherwise ship as a local web app</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>2. Team Split Rationale</h2>
+<p>The natural seam is where <code>TranscriptAggregator</code> hands off to <code>MeetingOrchestratorAgent</code>:</p>
+<ul>
+<li><strong>Before it</strong> → signal/speech processing (audio, ASR, diarization)</li>
+<li><strong>After it</strong> → language/agent logic + platform (orchestration, LLMs, API, monitoring)</li>
+</ul>
+<p>This is a real architectural boundary — different skill sets, different failure modes, minimal shared state — not an arbitrary split.</p>
+<hr>
+<h2>3. Person A — Audio &amp; Speech Intelligence</h2>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AudioCaptureService</code></td>
+<td>Mic I/O, pause/resume</td>
+</tr>
+<tr>
+<td><code>AudioBufferManager</code></td>
+<td>Ring buffer, thread safety</td>
+</tr>
+<tr>
+<td><code>VoiceActivityDetector</code></td>
+<td>Silero VAD integration</td>
+</tr>
+<tr>
+<td><code>SleepController</code></td>
+<td>Silence-timeout logic</td>
+</tr>
+<tr>
+<td><code>StreamingTranscriber</code></td>
+<td>faster-whisper streaming wrapper — the 100ms NFR lives or dies here</td>
+</tr>
+<tr>
+<td><code>SpeakerDiarizer</code></td>
+<td>pyannote integration, clustering</td>
+</tr>
+<tr>
+<td><code>SpeakerProfileStore</code></td>
+<td>Voice embedding persistence</td>
+</tr>
+<tr>
+<td><code>TranscriptAggregator</code></td>
+<td>Merges ASR + speaker labels — <strong>the handoff point</strong>; owns the output schema</td>
+</tr>
+<tr>
+<td><code>SessionStateManager</code></td>
+<td>Owns lifecycle state; states/transitions agreed jointly since Person B's orchestrator consumes it</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Skills leaned on:</strong> audio/DSP basics, real-time systems, ML inference optimization (quantization, latency tuning).</p>
+<hr>
+<h2>4. Person B — Agentic Generation &amp; Platform</h2>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>MeetingOrchestratorAgent</code></td>
+<td>Core agentic decision loop</td>
+</tr>
+<tr>
+<td><code>SummaryGeneratorAgent</code>, <code>MOMGeneratorAgent</code></td>
+<td>Prompting + structured output parsing</td>
+</tr>
+<tr>
+<td><code>ILLMProvider</code> / <code>LocalLLMClient</code> / <code>CloudLLMClient</code> / <code>LLMRouter</code></td>
+<td>Strategy pattern + circuit breaker</td>
+</tr>
+<tr>
+<td><code>PIIRedactionService</code>, <code>ConsentManager</code></td>
+<td>Privacy gating on the fallback path</td>
+</tr>
+<tr>
+<td><code>MeetingRepository</code>, <code>SecurityManager</code></td>
+<td>Persistence + encryption</td>
+</tr>
+<tr>
+<td><code>UIController</code> / API layer</td>
+<td>FastAPI backend, WebSocket live-transcript relay, frontend</td>
+</tr>
+<tr>
+<td><code>MetricsCollector</code>, <code>HealthCheckService</code>, <code>AlertManager</code>, <code>EvaluationService</code>, <code>FeedbackCollector</code></td>
+<td>Monitoring &amp; evaluation stack</td>
+</tr>
+<tr>
+<td><code>EventBus</code></td>
+<td>Infra owned here (most consumers live on this side); schemas are joint</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Skills leaned on:</strong> backend/API design, LLM prompting, systems/observability plumbing.</p>
+<hr>
+<h2>5. Shared Contracts to Lock Down in Week 1</h2>
+<p>So neither person blocks on the other:</p>
+<ol>
+<li><strong>Event schemas</strong> — exact fields for <code>AudioFrame</code>, <code>TranscriptSegment</code>, <code>SpeakerLabeled</code>, <code>SessionStateChanged</code>.</li>
+<li><strong>Transcript data model</strong> — shape of the aggregated transcript object handed from Person A to Person B (speaker id, text, start/end timestamps, confidence).</li>
+<li><strong><code>ILLMProvider</code> interface signature</strong> — agree the contract early so mocking/testing isn't blocked on either side.</li>
+</ol>
+<p>Once fixed: Person A develops against synthetic/mocked transcript events; Person B develops against a mocked transcript feed. Neither needs the other's code working to make progress.</p>
+
+</body></html>

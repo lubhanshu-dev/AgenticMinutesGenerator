@@ -1,0 +1,139 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}</style><style>:root{color-scheme:light dark;--md-bg:#fff;--md-text:rgba(0,0,0,.8);--md-muted:rgba(0,0,0,.6);--md-fill:rgba(0,0,0,.04);--md-fill-strong:rgba(0,0,0,.06);--md-rule:rgba(0,0,0,.1);--md-rule-strong:rgba(0,0,0,.16);--md-link:hsl(210 100% 45%)}@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){--md-bg:#0d0d0d;--md-text:rgba(255,255,255,.85);--md-muted:rgba(255,255,255,.6);--md-fill:rgba(255,255,255,.06);--md-fill-strong:rgba(255,255,255,.09);--md-rule:rgba(255,255,255,.14);--md-rule-strong:rgba(255,255,255,.22);--md-link:hsl(210 100% 72%)}}:root[data-theme="dark"]{color-scheme:dark;--md-bg:#0d0d0d;--md-text:rgba(255,255,255,.85);--md-muted:rgba(255,255,255,.6);--md-fill:rgba(255,255,255,.06);--md-fill-strong:rgba(255,255,255,.09);--md-rule:rgba(255,255,255,.14);--md-rule-strong:rgba(255,255,255,.22);--md-link:hsl(210 100% 72%)}:root[data-theme="light"]{color-scheme:light}@media print{:root,:root[data-theme="dark"]{color-scheme:light;--md-bg:#fff;--md-text:rgba(0,0,0,.8);--md-muted:rgba(0,0,0,.6);--md-fill:rgba(0,0,0,.04);--md-fill-strong:rgba(0,0,0,.06);--md-rule:rgba(0,0,0,.1);--md-rule-strong:rgba(0,0,0,.16);--md-link:hsl(210 100% 45%)}}body{background:var(--md-bg);color:var(--md-text);max-width:720px;margin:0 auto;padding:32px;display:flex;flex-direction:column;gap:10px;font:14px/1.55 -apple-system,BlinkMacSystemFont,'SF Pro','Segoe UI',sans-serif;overflow-wrap:break-word}body>:first-child{margin-top:0}h1,h2,h3,h4,h5,h6{margin:6px 0 0;line-height:1.25;font-weight:600;text-wrap:balance}h1{font-size:1.35em}h2{font-size:1.15em;color:var(--md-muted)}h3,h4,h5,h6{font-size:1em}p,ul,ol,blockquote,table,pre,hr{margin:0}strong{font-weight:600}a{color:var(--md-link);text-decoration:none}a:hover{text-decoration:underline}ul,ol{display:flex;flex-direction:column;gap:6px;padding-left:22px}ul{list-style:disc}ol{list-style:decimal}:is(li,td,th)>*+:is(p,ul,ol,blockquote){margin-top:6px}blockquote{display:flex;flex-direction:column;gap:10px;border-left:2px solid var(--md-rule);padding-left:10px;color:var(--md-muted)}:not(pre)>code{background:var(--md-fill);padding:1px 3px;border-radius:4px;font:.92em 'SF Mono',ui-monospace,Menlo,Consolas,monospace}a>code{background:none;color:inherit}pre{background:var(--md-fill);padding:10px 12px;border-radius:6px;overflow-x:auto;font:12px/1.5 'SF Mono',ui-monospace,Menlo,Consolas,monospace;margin-block:4px}pre code{background:none;padding:0;font:inherit}table{width:100%;border-collapse:separate;border-spacing:2px;font:inherit}th,td{padding:6px 8px;border-radius:3px;text-align:left;vertical-align:top}th{background:var(--md-fill-strong);font-weight:600}td{background:var(--md-fill)}:is(th,td) :not(pre)>code{background:transparent}hr{border:0;border-top:1px solid var(--md-rule-strong);margin-block:10px}img{max-width:100%;height:auto;border-radius:4px}</style>
+</head><body>
+<h1>Planning Note: Project Directory Structure</h1>
+<h2>Agentic MOM Generator</h2>
+<p>Companion to the <a href="agentic-mom-generator-hld.md">HLD</a> and the <a href="mom-generator-planning-note.md">Tech Stack &amp; Team Split note</a>. This note is working/planning material, not part of the formal design doc.</p>
+<p>The layout below maps 1:1 onto the HLD's component table — each package holds exactly the classes assigned to it, and the top-level split (<code>audio/</code>, <code>transcription/</code>, <code>diarization/</code> vs. <code>agents/</code>, <code>llm/</code>, <code>persistence/</code>, <code>monitoring/</code>, <code>evaluation/</code>, <code>api/</code>) mirrors the Person A / Person B ownership split.</p>
+<hr>
+<h2>1. Directory Tree</h2>
+<pre><code>mom_generator/
+├── README.md
+├── pyproject.toml
+├── .env.example
+├── .gitignore
+│
+├── config/
+│   ├── config.yaml               # model paths, thresholds, feature flags
+│   └── logging.yaml
+│
+├── docs/
+│   ├── hld.md
+│   └── planning_note.md
+│
+├── src/
+│   └── mom_generator/
+│       ├── __init__.py
+│       ├── main.py                        # entrypoint: boots API + pipeline
+│       │
+│       ├── core/                          # SHARED — owned jointly, changes need both sign-off
+│       │   ├── __init__.py
+│       │   ├── events.py                  # EventBus + event schemas (AudioFrame, TranscriptSegment, SpeakerLabeled, SessionStateChanged)
+│       │   ├── interfaces.py              # ILLMProvider and other abstract base classes
+│       │   ├── models.py                  # shared data models (TranscriptSegment, MOMDocument, SpeakerLabel)
+│       │   └── session_state.py           # SessionStateManager, session state enum
+│       │
+│       ├── audio/                         # PERSON A
+│       │   ├── __init__.py
+│       │   ├── capture_service.py         # AudioCaptureService
+│       │   ├── buffer_manager.py          # AudioBufferManager
+│       │   ├── vad.py                     # VoiceActivityDetector
+│       │   └── sleep_controller.py        # SleepController
+│       │
+│       ├── transcription/                 # PERSON A
+│       │   ├── __init__.py
+│       │   ├── streaming_transcriber.py   # StreamingTranscriber
+│       │   └── transcript_aggregator.py   # TranscriptAggregator — the handoff point
+│       │
+│       ├── diarization/                    # PERSON A
+│       │   ├── __init__.py
+│       │   ├── speaker_diarizer.py        # SpeakerDiarizer
+│       │   └── speaker_profile_store.py   # SpeakerProfileStore
+│       │
+│       ├── agents/                         # PERSON B
+│       │   ├── __init__.py
+│       │   ├── orchestrator_agent.py      # MeetingOrchestratorAgent
+│       │   ├── summary_agent.py           # SummaryGeneratorAgent
+│       │   └── mom_agent.py               # MOMGeneratorAgent
+│       │
+│       ├── llm/                            # PERSON B
+│       │   ├── __init__.py
+│       │   ├── local_llm_client.py        # LocalLLMClient
+│       │   ├── cloud_llm_client.py        # CloudLLMClient
+│       │   ├── llm_router.py              # LLMRouter
+│       │   ├── pii_redaction_service.py   # PIIRedactionService
+│       │   └── consent_manager.py         # ConsentManager
+│       │
+│       ├── persistence/                    # PERSON B
+│       │   ├── __init__.py
+│       │   ├── meeting_repository.py      # MeetingRepository
+│       │   ├── security_manager.py        # SecurityManager
+│       │   └── db/
+│       │       ├── schema.sql
+│       │       └── migrations/
+│       │
+│       ├── monitoring/                     # PERSON B
+│       │   ├── __init__.py
+│       │   ├── metrics_collector.py       # MetricsCollector
+│       │   ├── health_check_service.py    # HealthCheckService
+│       │   └── alert_manager.py           # AlertManager
+│       │
+│       ├── evaluation/                     # PERSON B
+│       │   ├── __init__.py
+│       │   ├── evaluation_service.py      # EvaluationService
+│       │   └── feedback_collector.py      # FeedbackCollector
+│       │
+│       └── api/                            # PERSON B
+│           ├── __init__.py
+│           ├── app.py                     # FastAPI app factory
+│           ├── routes/
+│           │   ├── session_routes.py      # start/pause/resume/stop
+│           │   └── mom_routes.py          # MOM retrieval
+│           └── websocket/
+│               └── live_transcript_ws.py  # live transcript stream
+│
+├── frontend/                       # optional, if a React/Vite UI is used
+│   ├── package.json
+│   └── src/
+│
+├── tests/
+│   ├── unit/
+│   │   ├── audio/
+│   │   ├── transcription/
+│   │   ├── diarization/
+│   │   ├── agents/
+│   │   ├── llm/
+│   │   ├── persistence/
+│   │   └── monitoring/
+│   ├── integration/
+│   │   └── test_end_to_end_session.py
+│   └── fixtures/
+│       └── sample_transcripts/
+│
+├── scripts/
+│   ├── run_dev.sh
+│   └── seed_test_data.py
+│
+└── data/                            # local runtime data — gitignored
+    ├── audio/
+    ├── transcripts/
+    └── mom_docs/
+</code></pre>
+<hr>
+<h2>2. Why This Structure</h2>
+<ul>
+<li><strong><code>core/</code> is the contract layer.</strong> It holds nothing but interfaces, event schemas, and shared models — no business logic. Both people import from it, neither person owns a class inside another's package. This is where the Week-1 shared contracts from the planning note physically live.</li>
+<li><strong>One package per HLD component group</strong>, not one file per class dumped into a flat folder — <code>audio/</code>, <code>transcription/</code>, <code>diarization/</code> mirror Person A's ownership table exactly; <code>agents/</code>, <code>llm/</code>, <code>persistence/</code>, <code>monitoring/</code>, <code>evaluation/</code>, <code>api/</code> mirror Person B's.</li>
+<li><strong><code>tests/unit/</code> mirrors <code>src/</code> 1:1</strong> — a test file's location tells you unambiguously which package (and which person) it belongs to.</li>
+<li><strong><code>transcript_aggregator.py</code></strong> sits at the bottom of Person A's tree deliberately — it's the file whose output schema (<code>core/models.py</code>) is the actual handoff contract.</li>
+<li><strong><code>data/</code> is gitignored</strong> — audio and transcripts are local, potentially sensitive, and should never end up in version control, consistent with the local-first NFR.</li>
+<li><strong><code>frontend/</code> is separate and optional</strong> — if you go with a minimal HTML/JS UI instead of React, this folder can be dropped entirely without touching <code>src/</code>.</li>
+</ul>
+<hr>
+<h2>3. Ground Rules for the Split</h2>
+<ol>
+<li>Nobody edits inside the other person's package directly — if <code>agents/</code> needs something from <code>transcription/</code>, it goes through the shared <code>core/models.py</code> object, not a direct import of an internal class.</li>
+<li>Any change to <code>core/</code> (events, interfaces, models) needs a quick sync between both people before merging — it's the one place where a silent change breaks the other person's work.</li>
+<li>Mirror new modules into <code>tests/unit/</code> as you go — don't let test structure drift from <code>src/</code> structure.</li>
+</ol>
+
+</body></html>

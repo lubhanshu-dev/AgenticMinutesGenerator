@@ -1,0 +1,689 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}</style><style>:root{color-scheme:light dark;--md-bg:#fff;--md-text:rgba(0,0,0,.8);--md-muted:rgba(0,0,0,.6);--md-fill:rgba(0,0,0,.04);--md-fill-strong:rgba(0,0,0,.06);--md-rule:rgba(0,0,0,.1);--md-rule-strong:rgba(0,0,0,.16);--md-link:hsl(210 100% 45%)}@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){--md-bg:#0d0d0d;--md-text:rgba(255,255,255,.85);--md-muted:rgba(255,255,255,.6);--md-fill:rgba(255,255,255,.06);--md-fill-strong:rgba(255,255,255,.09);--md-rule:rgba(255,255,255,.14);--md-rule-strong:rgba(255,255,255,.22);--md-link:hsl(210 100% 72%)}}:root[data-theme="dark"]{color-scheme:dark;--md-bg:#0d0d0d;--md-text:rgba(255,255,255,.85);--md-muted:rgba(255,255,255,.6);--md-fill:rgba(255,255,255,.06);--md-fill-strong:rgba(255,255,255,.09);--md-rule:rgba(255,255,255,.14);--md-rule-strong:rgba(255,255,255,.22);--md-link:hsl(210 100% 72%)}:root[data-theme="light"]{color-scheme:light}@media print{:root,:root[data-theme="dark"]{color-scheme:light;--md-bg:#fff;--md-text:rgba(0,0,0,.8);--md-muted:rgba(0,0,0,.6);--md-fill:rgba(0,0,0,.04);--md-fill-strong:rgba(0,0,0,.06);--md-rule:rgba(0,0,0,.1);--md-rule-strong:rgba(0,0,0,.16);--md-link:hsl(210 100% 45%)}}body{background:var(--md-bg);color:var(--md-text);max-width:720px;margin:0 auto;padding:32px;display:flex;flex-direction:column;gap:10px;font:14px/1.55 -apple-system,BlinkMacSystemFont,'SF Pro','Segoe UI',sans-serif;overflow-wrap:break-word}body>:first-child{margin-top:0}h1,h2,h3,h4,h5,h6{margin:6px 0 0;line-height:1.25;font-weight:600;text-wrap:balance}h1{font-size:1.35em}h2{font-size:1.15em;color:var(--md-muted)}h3,h4,h5,h6{font-size:1em}p,ul,ol,blockquote,table,pre,hr{margin:0}strong{font-weight:600}a{color:var(--md-link);text-decoration:none}a:hover{text-decoration:underline}ul,ol{display:flex;flex-direction:column;gap:6px;padding-left:22px}ul{list-style:disc}ol{list-style:decimal}:is(li,td,th)>*+:is(p,ul,ol,blockquote){margin-top:6px}blockquote{display:flex;flex-direction:column;gap:10px;border-left:2px solid var(--md-rule);padding-left:10px;color:var(--md-muted)}:not(pre)>code{background:var(--md-fill);padding:1px 3px;border-radius:4px;font:.92em 'SF Mono',ui-monospace,Menlo,Consolas,monospace}a>code{background:none;color:inherit}pre{background:var(--md-fill);padding:10px 12px;border-radius:6px;overflow-x:auto;font:12px/1.5 'SF Mono',ui-monospace,Menlo,Consolas,monospace;margin-block:4px}pre code{background:none;padding:0;font:inherit}table{width:100%;border-collapse:separate;border-spacing:2px;font:inherit}th,td{padding:6px 8px;border-radius:3px;text-align:left;vertical-align:top}th{background:var(--md-fill-strong);font-weight:600}td{background:var(--md-fill)}:is(th,td) :not(pre)>code{background:transparent}hr{border:0;border-top:1px solid var(--md-rule-strong);margin-block:10px}img{max-width:100%;height:auto;border-radius:4px}</style>
+</head><body>
+<h1>High-Level Design Document</h1>
+<h2>Agentic Minutes-of-Meeting (MOM) Generator</h2>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Document Type</td>
+<td>High-Level Design (HLD)</td>
+</tr>
+<tr>
+<td>Version</td>
+<td>1.1</td>
+</tr>
+<tr>
+<td>Status</td>
+<td>Draft</td>
+</tr>
+<tr>
+<td>Author</td>
+<td>[Your Name]</td>
+</tr>
+</tbody>
+</table>
+<h3>Revision History</h3>
+<table>
+<thead>
+<tr>
+<th>Version</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.0</td>
+<td>Initial scope + architecture</td>
+</tr>
+<tr>
+<td>1.1</td>
+<td>Added cloud LLM fallback strategy; added Monitoring &amp; Evaluation as a formal NFR; restructured document to standard HLD template</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>1. Purpose</h2>
+<p>This document describes the high-level architecture of an agentic system that records a meeting locally, transcribes it live, identifies speakers, and generates a structured Minutes-of-Meeting (MOM) document. It defines system scope, component responsibilities, data flow, interface contracts, non-functional requirements, and the strategy for local-vs-cloud LLM execution.</p>
+<h2>2. Glossary</h2>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ASR</td>
+<td>Automatic Speech Recognition</td>
+</tr>
+<tr>
+<td>VAD</td>
+<td>Voice Activity Detection</td>
+</tr>
+<tr>
+<td>MOM</td>
+<td>Minutes of Meeting</td>
+</tr>
+<tr>
+<td>SRP</td>
+<td>Single Responsibility Principle</td>
+</tr>
+<tr>
+<td>WER</td>
+<td>Word Error Rate (ASR accuracy metric)</td>
+</tr>
+<tr>
+<td>PII</td>
+<td>Personally Identifiable Information</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>3. Scope</h2>
+<h3>3.1 In Scope — v1</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Capability</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Record voice from local mic</td>
+<td>Single device, single active session at a time</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Live speech-to-text</td>
+<td>Streaming, partial + final transcript</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Summary generation</td>
+<td>Post-meeting (optionally incremental)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Structured MOM generation</td>
+<td>Agenda, decisions, action items, owners</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Speaker diarization</td>
+<td>Unsupervised clustering per session</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Person identification</td>
+<td>Optional match against locally-enrolled voice profiles</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Local-first execution</td>
+<td>Local models by default, no mandatory network egress</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Cloud LLM fallback</td>
+<td>Opt-in, redaction-gated, used only when local inference fails or falls below a quality threshold</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Pause / resume recording</td>
+<td>User-triggered</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Auto-sleep on silence</td>
+<td>System-triggered, auto-wake on speech</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Monitoring &amp; evaluation</td>
+<td>Operational health metrics + output quality evaluation (see §7.4)</td>
+</tr>
+</tbody>
+</table>
+<h3>3.2 Out of Scope — v1 (Phase 2 candidates)</h3>
+<ul>
+<li>Multi-tenant / multi-session concurrent scaling (shared server, many simultaneous users)</li>
+<li>Cross-meeting persistent identity beyond the local profile store</li>
+<li>Multi-device sync / collaborative live dashboard</li>
+<li>Third-party export integrations (Slack, Notion, email)</li>
+</ul>
+<h3>3.3 Clarified Interpretations</h3>
+<ul>
+<li><strong>&quot;Scalability for multiple users talking&quot;</strong> → multi-<strong>speaker</strong> diarization within a single session, not horizontal service scaling.</li>
+<li><strong>&quot;100ms performance&quot;</strong> → applies to the live partial-transcript path only, not batch summary/MOM generation.</li>
+<li><strong>&quot;Local first&quot;</strong> → local execution is the default and the fallback path is cloud, never the reverse. Cloud is opt-in per session, not silently enabled.</li>
+</ul>
+<hr>
+<h2>4. Architecture Principles &amp; Patterns</h2>
+<p>Standard software design practices applied throughout:</p>
+<ul>
+<li><strong>Single Responsibility Principle</strong> — every class listed in §6 owns exactly one concern.</li>
+<li><strong>Dependency Inversion</strong> — high-level agents (<code>SummaryGeneratorAgent</code>, <code>MOMGeneratorAgent</code>) depend on the <code>ILLMProvider</code> interface, not on a concrete LLM backend. This is what makes the cloud fallback pluggable without touching agent logic.</li>
+<li><strong>Strategy Pattern</strong> — <code>LocalLLMClient</code> and <code>CloudLLMClient</code> are interchangeable strategies behind <code>ILLMProvider</code>; <code>LLMRouter</code> selects between them at runtime.</li>
+<li><strong>Circuit Breaker Pattern</strong> — <code>LLMRouter</code> trips to cloud (if permitted) after repeated local failures/timeouts, and resets once local recovers, preventing cascading stalls.</li>
+<li><strong>Repository Pattern</strong> — all persistence goes through <code>MeetingRepository</code>; no component talks to SQLite/filesystem directly.</li>
+<li><strong>Observer / Pub-Sub</strong> — components communicate via <code>EventBus</code>, not direct method calls, keeping them independently testable.</li>
+<li><strong>Separation of ops-monitoring vs. quality-evaluation</strong> — treated as two distinct concerns (§7.4), each with its own component, per standard MLOps practice.</li>
+</ul>
+<hr>
+<h2>5. Architecture Overview</h2>
+<pre class="mermaid">flowchart TB
+    Mic[Microphone Input] --&gt; ACS[AudioCaptureService]
+    ACS --&gt; ABM[AudioBufferManager]
+    ABM --&gt; VAD[VoiceActivityDetector]
+    VAD --&gt; SC[SleepController]
+    VAD --&gt; ST[StreamingTranscriber]
+    ABM --&gt; SD[SpeakerDiarizer]
+    SD --&gt; SPS[(SpeakerProfileStore)]
+    ST --&gt; TA[TranscriptAggregator]
+    SD --&gt; TA
+    TA --&gt; SSM[SessionStateManager]
+    SSM --&gt; MOA[MeetingOrchestratorAgent]
+
+    MOA --&gt; SGA[SummaryGeneratorAgent]
+    MOA --&gt; MGA[MOMGeneratorAgent]
+    SGA --&gt; ROUTER[LLMRouter]
+    MGA --&gt; ROUTER
+    ROUTER --&gt; PII[PIIRedactionService]
+    ROUTER --&gt; CONSENT[ConsentManager]
+    ROUTER --&gt; LOCAL[LocalLLMClient]
+    ROUTER --&gt; CLOUD[CloudLLMClient]
+
+    MOA --&gt; REPO[(MeetingRepository)]
+    SGA --&gt; REPO
+    MGA --&gt; REPO
+    UI[UIController / API Layer] --&gt; SSM
+    UI --&gt; MOA
+    SEC[SecurityManager] --- REPO
+    SEC --- SPS
+
+    MET[MetricsCollector] -.observes.- ACS
+    MET -.observes.- ST
+    MET -.observes.- ROUTER
+    HEALTH[HealthCheckService] -.pings.- MOA
+    EVAL[EvaluationService] --&gt; REPO
+    FB[FeedbackCollector] --&gt; EVAL
+    ALERT[AlertManager] --&gt; MET
+    ALERT --&gt; HEALTH
+</pre>
+<hr>
+<h2>6. Component Responsibilities (SRP)</h2>
+<h3>6.1 Capture &amp; Transcription Pipeline</h3>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Responsibility</th>
+<th>Depends on</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AudioCaptureService</code></td>
+<td>Opens mic stream, chunks PCM into ~200–300ms frames, honors pause/resume</td>
+<td>OS audio API</td>
+</tr>
+<tr>
+<td><code>AudioBufferManager</code></td>
+<td>Thread-safe ring buffer feeding downstream consumers without blocking capture</td>
+<td><code>AudioCaptureService</code></td>
+</tr>
+<tr>
+<td><code>VoiceActivityDetector</code></td>
+<td>Classifies each frame as speech/silence</td>
+<td><code>AudioBufferManager</code></td>
+</tr>
+<tr>
+<td><code>SleepController</code></td>
+<td>Tracks silence duration; triggers auto-sleep / wake</td>
+<td><code>VoiceActivityDetector</code></td>
+</tr>
+<tr>
+<td><code>StreamingTranscriber</code></td>
+<td>Wraps local streaming ASR model; emits partial + final segments with timestamps</td>
+<td><code>AudioBufferManager</code>, ASR model</td>
+</tr>
+<tr>
+<td><code>SpeakerDiarizer</code></td>
+<td>Computes voice embeddings per segment, clusters into distinct speakers</td>
+<td><code>AudioBufferManager</code></td>
+</tr>
+<tr>
+<td><code>SpeakerProfileStore</code></td>
+<td>Persists/retrieves named voice-embedding profiles</td>
+<td>Local DB</td>
+</tr>
+<tr>
+<td><code>TranscriptAggregator</code></td>
+<td>Merges ASR output + speaker labels into one ordered transcript</td>
+<td><code>StreamingTranscriber</code>, <code>SpeakerDiarizer</code></td>
+</tr>
+<tr>
+<td><code>SessionStateManager</code></td>
+<td>Single source of truth for session lifecycle (<code>idle → recording → paused → sleeping → ended</code>)</td>
+<td><code>EventBus</code></td>
+</tr>
+</tbody>
+</table>
+<h3>6.2 Generation &amp; Orchestration</h3>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Responsibility</th>
+<th>Depends on</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>MeetingOrchestratorAgent</code></td>
+<td>Decides <em>when</em> to invoke summarization/MOM generation based on session state; handles retries and partial-failure recovery</td>
+<td><code>SessionStateManager</code>, <code>SummaryGeneratorAgent</code>, <code>MOMGeneratorAgent</code></td>
+</tr>
+<tr>
+<td><code>SummaryGeneratorAgent</code></td>
+<td>Produces a narrative summary from the transcript</td>
+<td><code>ILLMProvider</code> (via <code>LLMRouter</code>)</td>
+</tr>
+<tr>
+<td><code>MOMGeneratorAgent</code></td>
+<td>Produces structured MOM (agenda, decisions, action items + owners) via constrained prompting</td>
+<td><code>ILLMProvider</code> (via <code>LLMRouter</code>)</td>
+</tr>
+</tbody>
+</table>
+<h3>6.3 LLM Provider Layer (Local + Cloud Fallback)</h3>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Responsibility</th>
+<th>Depends on</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ILLMProvider</code> (interface)</td>
+<td>Defines <code>generate(prompt, params) -&gt; response</code> contract</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>LocalLLMClient</code></td>
+<td>Implements <code>ILLMProvider</code> over a local runtime (e.g., Ollama/llama.cpp)</td>
+<td>Local LLM runtime</td>
+</tr>
+<tr>
+<td><code>CloudLLMClient</code></td>
+<td>Implements <code>ILLMProvider</code> over an external API; only ever invoked by <code>LLMRouter</code>, never called directly by agents</td>
+<td>External LLM API</td>
+</tr>
+<tr>
+<td><code>LLMRouter</code></td>
+<td>Chooses local vs. cloud per call: local by default; falls back to cloud only if local fails/times out <strong>and</strong> <code>ConsentManager</code> confirms the session has opted in; applies circuit-breaker logic to avoid repeated slow failures</td>
+<td><code>LocalLLMClient</code>, <code>CloudLLMClient</code>, <code>ConsentManager</code>, <code>PIIRedactionService</code></td>
+</tr>
+<tr>
+<td><code>PIIRedactionService</code></td>
+<td>Strips/masks names, emails, phone numbers, and enrolled-speaker identities from any payload before it is allowed to leave the device</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>ConsentManager</code></td>
+<td>Tracks per-session user consent for cloud fallback; default is <strong>off</strong></td>
+<td><code>MeetingRepository</code></td>
+</tr>
+</tbody>
+</table>
+<h3>6.4 Persistence &amp; Security</h3>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Responsibility</th>
+<th>Depends on</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>MeetingRepository</code></td>
+<td>Persists transcripts, summaries, MOM docs, audio; sole owner of storage access (Repository pattern)</td>
+<td>Filesystem + SQLite</td>
+</tr>
+<tr>
+<td><code>SecurityManager</code></td>
+<td>Encryption at rest, access control, redaction hooks before any external call</td>
+<td><code>MeetingRepository</code>, <code>SpeakerProfileStore</code></td>
+</tr>
+</tbody>
+</table>
+<h3>6.5 Monitoring &amp; Evaluation</h3>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Responsibility</th>
+<th>Depends on</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>MetricsCollector</code></td>
+<td>Captures latency, throughput, resource usage (CPU/GPU/mem) per component</td>
+<td><code>EventBus</code></td>
+</tr>
+<tr>
+<td><code>HealthCheckService</code></td>
+<td>Periodic liveness/heartbeat checks on each pipeline stage</td>
+<td><code>MetricsCollector</code></td>
+</tr>
+<tr>
+<td><code>AlertManager</code></td>
+<td>Raises alerts when metrics breach thresholds (e.g., transcript latency &gt; 100ms sustained, local LLM failure rate spike)</td>
+<td><code>MetricsCollector</code>, <code>HealthCheckService</code></td>
+</tr>
+<tr>
+<td><code>EvaluationService</code></td>
+<td>Runs quality evaluation of outputs: ASR accuracy (WER sampling), summary/MOM quality (rubric-based or reference-based scoring), fallback-usage rate</td>
+<td><code>MeetingRepository</code></td>
+</tr>
+<tr>
+<td><code>FeedbackCollector</code></td>
+<td>Captures user edits/corrections to generated MOM as evaluation signal and regression-test fixtures</td>
+<td><code>EvaluationService</code></td>
+</tr>
+</tbody>
+</table>
+<h3>6.6 Interface / UI Layer</h3>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Responsibility</th>
+<th>Depends on</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>UIController</code></td>
+<td>Exposes start/pause/resume/stop, live transcript stream (WebSocket), MOM retrieval (REST), consent toggle for cloud fallback</td>
+<td>Orchestrator + State Manager</td>
+</tr>
+<tr>
+<td><code>EventBus</code></td>
+<td>Decouples all components via pub/sub (<code>AudioFrame</code>, <code>TranscriptSegment</code>, <code>SpeakerLabeled</code>, <code>SessionStateChanged</code>, <code>LLMFallbackTriggered</code>, etc.)</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>7. Non-Functional Requirements</h2>
+<h3>7.1 Scalability</h3>
+<p><code>SpeakerDiarizer</code> handles multiple simultaneous speakers via per-frame embedding + clustering, independent of transcript generation. The orchestrator is stateless-per-session, so running multiple sessions in parallel (Phase 2) means instantiating more pipeline instances, not redesigning them.</p>
+<h3>7.2 Security &amp; Privacy</h3>
+<ul>
+<li>Local execution is the default; no network egress unless <code>ConsentManager</code> confirms opt-in.</li>
+<li><code>PIIRedactionService</code> runs before <strong>every</strong> cloud call — no exceptions, enforced at the <code>LLMRouter</code> level so agents cannot bypass it.</li>
+<li><code>SecurityManager</code> encrypts transcripts, audio, and voice profiles at rest.</li>
+<li>Cloud fallback is logged (<code>LLMFallbackTriggered</code> event) so the user can audit when and why data left the device.</li>
+</ul>
+<h3>7.3 Performance</h3>
+<ul>
+<li>Live transcript path: small frame sizes (~200–300ms), lock-free ring buffer, VAD gating to skip silent frames, async event-driven push rather than polling — target &lt;100ms frame-to-partial-transcript latency.</li>
+<li>Batch generation (summary/MOM) is explicitly excluded from the 100ms budget; it is measured separately under §7.4.</li>
+</ul>
+<h3>7.4 Monitoring &amp; System Evaluation</h3>
+<p>This NFR has two distinct halves, tracked by separate components per standard MLOps practice — operational health is not the same concern as output quality:</p>
+<p><strong>a) Operational Monitoring</strong> (is the system running correctly?)</p>
+<ul>
+<li><code>MetricsCollector</code> tracks per-component latency, throughput, and resource usage.</li>
+<li><code>HealthCheckService</code> performs liveness checks on each pipeline stage and flags stalled components (e.g., ASR thread hung, LLM call timing out).</li>
+<li><code>AlertManager</code> raises threshold-based alerts (e.g., sustained &gt;100ms transcript latency, elevated cloud-fallback rate, repeated local LLM failures).</li>
+<li>All logs are structured and local by default, consistent with the local-first NFR.</li>
+</ul>
+<p><strong>b) Output Quality Evaluation</strong> (is the system producing good results?)</p>
+<ul>
+<li><code>EvaluationService</code> periodically scores:
+<ul>
+<li>ASR accuracy via WER against sampled/labeled audio.</li>
+<li>Diarization accuracy (speaker confusion rate) where ground truth is available.</li>
+<li>Summary/MOM quality via rubric-based scoring (completeness of action items, correctness of owners/dates).</li>
+</ul>
+</li>
+<li><code>FeedbackCollector</code> captures user corrections to a generated MOM (edits, deletions, added action items) as a continuous quality signal and as regression fixtures for future model/prompt changes.</li>
+<li>Evaluation results feed back into <code>AlertManager</code> if quality drops below a defined baseline (e.g., MOM completeness score drifts down after a model/prompt change).</li>
+</ul>
+<h3>7.5 Reliability</h3>
+<ul>
+<li><code>MeetingOrchestratorAgent</code> persists intermediate state (partial transcript, diarization labels) via <code>MeetingRepository</code> continuously, so a crash mid-meeting does not lose captured data — the session can resume from last checkpoint.</li>
+<li>Circuit-breaker logic in <code>LLMRouter</code> prevents a failing LLM backend from stalling the whole pipeline.</li>
+</ul>
+<h3>7.6 Maintainability</h3>
+<ul>
+<li>Strict SRP + interface-based dependencies (§4) mean each class is independently unit-testable and mockable, and the LLM backend can be swapped or a new provider added without touching agent or orchestrator code.</li>
+</ul>
+<hr>
+<h2>8. Sequence Flow — Meeting with Cloud Fallback</h2>
+<pre class="mermaid">sequenceDiagram
+    participant MOA as MeetingOrchestratorAgent
+    participant MGA as MOMGeneratorAgent
+    participant Router as LLMRouter
+    participant Consent as ConsentManager
+    participant PII as PIIRedactionService
+    participant Local as LocalLLMClient
+    participant Cloud as CloudLLMClient
+    participant Eval as EvaluationService
+
+    MOA-&gt;&gt;MGA: generate MOM(transcript, summary, speakers)
+    MGA-&gt;&gt;Router: generate(prompt)
+    Router-&gt;&gt;Local: generate(prompt)
+    alt local succeeds
+        Local--&gt;&gt;Router: structured MOM
+    else local fails or times out
+        Router-&gt;&gt;Consent: is cloud fallback allowed?
+        alt consent granted
+            Router-&gt;&gt;PII: redact(prompt)
+            PII--&gt;&gt;Router: redacted prompt
+            Router-&gt;&gt;Cloud: generate(redacted prompt)
+            Cloud--&gt;&gt;Router: structured MOM
+        else consent not granted
+            Router--&gt;&gt;MGA: failure (no fallback permitted)
+        end
+    end
+    Router--&gt;&gt;MGA: result
+    MGA--&gt;&gt;MOA: structured MOM
+    MOA-&gt;&gt;Eval: log output for quality evaluation
+</pre>
+<hr>
+<h2>9. Class Diagram — LLM Provider Layer</h2>
+<pre class="mermaid">classDiagram
+    class ILLMProvider {
+        &lt;&lt;interface&gt;&gt;
+        +generate(prompt, params) Response
+    }
+    class LocalLLMClient {
+        +generate(prompt, params) Response
+    }
+    class CloudLLMClient {
+        +generate(prompt, params) Response
+    }
+    class LLMRouter {
+        -ConsentManager consentManager
+        -PIIRedactionService redactor
+        +generate(prompt, params) Response
+        -shouldFallback() bool
+    }
+    ILLMProvider &lt;|.. LocalLLMClient
+    ILLMProvider &lt;|.. CloudLLMClient
+    LLMRouter --&gt; ILLMProvider
+    LLMRouter --&gt; ConsentManager
+    LLMRouter --&gt; PIIRedactionService
+</pre>
+<hr>
+<h2>10. Suggested Tech Stack</h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Option</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Streaming ASR</td>
+<td><code>faster-whisper</code> or <code>whisper.cpp</code> (quantized)</td>
+</tr>
+<tr>
+<td>Diarization</td>
+<td><code>pyannote.audio</code> (local)</td>
+</tr>
+<tr>
+<td>Local LLM runtime</td>
+<td>Ollama (Llama 3.1 8B / Mistral 7B)</td>
+</tr>
+<tr>
+<td>Cloud LLM (opt-in fallback)</td>
+<td>Any hosted API behind the <code>ILLMProvider</code> interface</td>
+</tr>
+<tr>
+<td>Local storage</td>
+<td>SQLite (metadata) + filesystem (audio, transcripts, MOM)</td>
+</tr>
+<tr>
+<td>Event bus</td>
+<td>In-process pub/sub (e.g., <code>asyncio</code> queues)</td>
+</tr>
+<tr>
+<td>Monitoring</td>
+<td>Local structured logging + lightweight metrics export (e.g., Prometheus client running locally)</td>
+</tr>
+<tr>
+<td>UI/API</td>
+<td>Local WebSocket (live transcript) + REST (session control, MOM retrieval)</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>11. Risks &amp; Mitigations</h2>
+<table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cloud fallback silently leaks data</td>
+<td>Redaction is enforced inside <code>LLMRouter</code>, not left to agents; fallback requires explicit per-session consent, default off</td>
+</tr>
+<tr>
+<td>Local LLM quality insufficient for MOM structure</td>
+<td><code>EvaluationService</code> tracks completeness score; persistent drift triggers alert to consider prompt/model tuning before defaulting to cloud</td>
+</tr>
+<tr>
+<td>Diarization errors on overlapping speech</td>
+<td>Flagged in evaluation metrics (speaker confusion rate); acceptable-error threshold should be defined with stakeholders</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>12. Open Questions</h2>
+<ol>
+<li>Delivery form for v1: desktop app, local web app, or CLI?</li>
+<li>Should person identification require an enrollment step, or just per-session anonymous clustering?</li>
+<li>Rolling (incremental) summaries during the meeting, or only a final one?</li>
+<li>What is the acceptable quality baseline for <code>EvaluationService</code> to alert on (e.g., MOM completeness score threshold)?</li>
+</ol>
+
+
+<!--claude-mermaid-runtime-begin:3477-->
+<style>.mermaid-diagram{margin-block:4px}.mermaid-diagram svg{display:block;margin:0 auto;max-width:100%;height:auto}</style>
+<script src="/_runtime/mermaid-11.16.1.min.js"></script>
+<script>(function(){
+var CFG={"palettes":{"light":{"surface":"#f4efe4","text":"#42392e","line":"#8a7f6d","border":"#7a6c52","bg":"#fffdf8"},"dark":{"surface":"#262b34","text":"#f2f3f5","line":"#a8adb8","border":"#9aa4b8","bg":"#1f232b"}}};
+if(typeof mermaid==='undefined')return;
+var pres=Array.prototype.slice.call(document.querySelectorAll('pre.mermaid')).filter(function(p){if(p.hasAttribute('data-claude-mermaid-claimed'))return false;p.setAttribute('data-claude-mermaid-claimed','1');return true;});
+if(!pres.length)return;
+var mq=window.matchMedia?window.matchMedia('(prefers-color-scheme: dark)'):null;
+var root=document.documentElement;
+var items=pres.map(function(pre){
+var mount=document.createElement('div');mount.className='mermaid-diagram';
+return {pre:pre,mount:mount,src:pre.textContent||''};
+});
+var seq=0;
+var renderGen=0;
+var lastKey='';
+function pageBg(fallback){
+var els=[document.body,document.documentElement];
+for(var i=0;i<els.length;i++){
+var c=els[i]&&getComputedStyle(els[i]).backgroundColor;
+if(c&&c!=='transparent'&&c!=='rgba(0, 0, 0, 0)')return c;
+}
+return fallback;
+}
+function render(){
+var theme=root.getAttribute('data-theme');
+var dark=theme==='dark'||(!!(mq&&mq.matches)&&theme!=='light');
+var pal=dark?CFG.palettes.dark:CFG.palettes.light;
+var bg=pageBg(pal.bg);
+var key=(dark?'d':'l')+'|'+bg;
+if(key===lastKey)return;
+lastKey=key;
+var gen=++renderGen;
+var font=getComputedStyle(document.body).fontFamily||'sans-serif';
+var nat={useMaxWidth:false};
+mermaid.initialize({
+startOnLoad:false,securityLevel:'strict',theme:'base',
+flowchart:nat,sequence:nat,er:nat,state:nat,class:nat,pie:nat,
+gantt:nat,journey:nat,timeline:nat,gitGraph:nat,mindmap:nat,xyChart:nat,
+quadrantChart:nat,sankey:nat,c4:nat,requirement:nat,block:nat,
+packet:nat,kanban:nat,architecture:nat,radar:nat,
+themeVariables:{background:bg,mainBkg:pal.surface,primaryColor:pal.surface,
+primaryTextColor:pal.text,lineColor:pal.line,primaryBorderColor:pal.border,
+nodeBorder:pal.border,clusterBorder:pal.border,edgeLabelBackground:bg,
+clusterBkg:'rgba(127,127,127,0.07)',titleColor:pal.text,
+darkMode:dark,rowOdd:bg,rowEven:'rgba(127,127,127,0.07)',
+attributeBackgroundColorOdd:bg,attributeBackgroundColorEven:'rgba(127,127,127,0.07)',
+fontSize:'16px',fontFamily:font},
+themeCSS:'.node rect, .node circle, .node polygon, .node path, .cluster rect { stroke-width: 2px; }'
+});
+items.forEach(function(it){
+var id='claude-mermaid-'+seq++;
+mermaid.render(id,it.src).then(function(r){
+if(gen!==renderGen)return;
+var prev=it.pre.previousElementSibling;
+if(prev&&prev.className==='mermaid-diagram'&&prev!==it.mount)return;
+it.mount.innerHTML=r.svg;
+if(!it.mount.parentNode)it.pre.parentNode.insertBefore(it.mount,it.pre);
+it.pre.style.display='none';
+},function(){
+var scratch=document.getElementById(id);
+if(scratch)scratch.parentNode.removeChild(scratch);
+scratch=document.getElementById('d'+id);
+if(scratch)scratch.parentNode.removeChild(scratch);
+if(gen!==renderGen)return;
+if(it.mount.parentNode)it.mount.parentNode.removeChild(it.mount);
+it.pre.style.display='';
+});
+});
+}
+render();
+if(mq&&mq.addEventListener)mq.addEventListener('change',render);
+if(typeof MutationObserver!=='undefined')new MutationObserver(render).observe(root,{attributes:true,attributeFilter:['data-theme']});
+})();</script>
+<!--claude-mermaid-runtime-end-->
+</body></html>
